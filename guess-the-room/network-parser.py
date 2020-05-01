@@ -10,8 +10,8 @@ import csv
 import time
 
 folder = 'rooms-data/'
-room = 'bedroom'
-time_of_day= 'afternoon'
+room = 'kitchen'
+time_of_day= 'night'
 
 filepath = f'{folder}{room}-{time_of_day}.csv'
 

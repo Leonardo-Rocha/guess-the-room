@@ -23,7 +23,7 @@ def train():
             # the class name should be a room
             class_full = filename.split('-')
             class_name = class_full[0]
-            attributes_matrix = []
+            
             for row in csvreader:
                 signal_array = []
                 channel_array = []
@@ -54,13 +54,11 @@ def train():
                     # update the zscore_index
                     zscore_index += 1
 
-                attributes_matrix.append(attributes)
-                
-            # put the data in the dict
-            if class_name not in data_dict:
-                data_dict[class_name] = attributes_matrix
-            else: 
-                data_dict[class_name] = np.concatenate(data_dict[class_name], attributes_matrix)
+                # creates the list if it doesn't exist yet
+                if class_name not in data_dict:
+                    data_dict[class_name] = []
+                # put the data in the dict
+                data_dict[class_name].append(attributes)
 
 
 """
@@ -145,7 +143,8 @@ def k_nearest_neighbor(k, input):
                             distances_array.append(distance)
         distances_array = np.sort(distances_array)
         for i in range(k):
-            k_dict[distances_array[i]] = class_name
+            if 0 <= i < len(distances_array):
+                k_dict[distances_array[i]] = class_name
     
     # get the k smallest distances and count appearances
     k_dict = sorted(k_dict.items())
@@ -164,6 +163,7 @@ def k_nearest_neighbor(k, input):
     for item in output_dict.items():
         if item[1] > highest_appearances:
             highest_appearances = item[1]
+            
             ret = (item[0], highest_appearances/k)
 
     return ret
@@ -194,6 +194,6 @@ def get_room_data():
 if __name__ == '__main__':
     train()
     input = get_room_data()
-    output = k_nearest_neighbor(5, input)
+    output = k_nearest_neighbor(11, input)
 
-    print(f'You\'re probably in the {output[0]} with probability {round(output[1] * 100, 2)}')
+    print(f'You\'re in the {output[0]} with probability {round(output[1] * 100, 2)}')

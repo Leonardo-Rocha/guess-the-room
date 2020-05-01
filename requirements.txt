@@ -1,1 +1,3 @@
 wifi
+scipy
+numpy
