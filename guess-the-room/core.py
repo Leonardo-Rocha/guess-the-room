@@ -3,6 +3,7 @@ import csv
 import os
 from scipy import stats
 import numpy as np
+from wifi import Cell
 
 data_dict = dict()
 
@@ -56,8 +57,10 @@ def train():
                 attributes_matrix.append(attributes)
                 
             # put the data in the dict
-            # TODO: if the class_name already exists update the matrix
-            data_dict[class_name] = attributes_matrix
+            if class_name not in data_dict:
+                data_dict[class_name] = attributes_matrix
+            else: 
+                data_dict[class_name] = np.concatenate(data_dict[class_name], attributes_matrix)
 
 
 """
@@ -128,37 +131,69 @@ def k_nearest_neighbor(k, input):
                 source_channel = input[i+2]
                 source = [source_ssid, source_signal, source_channel]
                 
-                for i in range(0, len(attributes) - 1, 3):
-                    destiny_ssid = attributes[i]
+                for j in range(0, len(attributes) - 1, 3):
+                    destiny_ssid = attributes[j]
                     # if the ids match compute the distance, otherwise do nothing
                     if source_ssid == destiny_ssid:
-                        destiny_signal  = attributes[i+1]
-                        destiny_channel = attributes[i+2]
+                        destiny_signal  = attributes[j+1]
+                        destiny_channel = attributes[j+2]
                         destiny = [destiny_ssid, destiny_signal, destiny_channel]
 
                         distance = euclidean_distance(source, destiny)
-
-                        distances_array.append(distance)
+                        # don't add repeated distances
+                        if distance not in distances_array:
+                            distances_array.append(distance)
         distances_array = np.sort(distances_array)
         for i in range(k):
             k_dict[distances_array[i]] = class_name
     
-    for key, value in sorted(k_dict):
-        output_dict[value] += key / k
+    # get the k smallest distances and count appearances
+    k_dict = sorted(k_dict.items())
+    for i in range(k):
+        item = k_dict[i]
+        key = item[1]
+        if key in output_dict:
+            output_dict[key] += 1
+        else:
+            output_dict[key] = 1
 
-    highest_value = 0
+    # get the one with the highest number of appearances and 
+    # calculate the probability
+    highest_appearances = 0
     ret = ()
     for item in output_dict.items():
-        if item.value > highest_value:
-            highest_value = item.value
-            ret = item
+        if item[1] > highest_appearances:
+            highest_appearances = item[1]
+            ret = (item[0], highest_appearances/k)
 
     return ret
 
 
+def get_room_data():
+    # initialize an empty room_data
+    room_data = []
+
+    # find all valid cells in the network device 'wlp3s0'
+    valid_cell = 0
+    cells_list = Cell.all('wlp3s0')
+    while valid_cell == 0:
+        cells_list = Cell.all('wlp3s0')
+        # check if the cell is valid
+        for cell in cells_list:
+            valid_cell = 1
+            break
+
+    for cell in cells_list:
+        room_data.append(cell.ssid)
+        room_data.append(cell.signal)
+        room_data.append(cell.channel)
+
+    return room_data
+
+
 if __name__ == '__main__':
     train()
-    input = ['Asgard', '-84', '10', 'Almeida', '-72', '11']
-    output = k_nearest_neighbor(3, input)
+    input = get_room_data()
+    output = k_nearest_neighbor(5, input)
 
-    print(output)
+    print(f'You\'re probably in the {output[0]} with probability {round(output[1] * 100, 2)}')
