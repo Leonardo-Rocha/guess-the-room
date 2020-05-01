@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-
 # This file is used to scan the wifi data and parse 30 times.
 # The room and time_of_day must be changed manually according to the room and time of the day.
 # It generates a {filename}.csv file where every row is in the form: 
